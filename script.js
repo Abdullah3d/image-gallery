@@ -1,21 +1,44 @@
 const imagesWrapper = document.querySelector(".images");
 const loadMoreBtn = document.querySelector(".load-more");
 const searchInput = document.querySelector(".search-box input");
+const lightBox = document.querySelector(".lightbox");
 const apiKey = "t5qEKDIbHS3weg8y07Av4F8MzshvB0aB9MKBHUrbAA4phEYAsXWO6G8f";
 const perPage = 15;
 let currentPage = 1;
 let searchTerm = null;
 
+const downloadImg = (imgURL) => {
+    fetch(imgURL).then(res => res.blob()).then(file => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(file);
+        a.download = new Date().getTime();
+        a.click();
+    }).catch(() => alert("Failed to download image"))
+}
+
+// const showLightbox = (name, img) => {
+//     lightBox.querySelector("img").src = img;
+//     lightBox.querySelector("span").innerText = name;
+//     lightBox.classList.add("show");
+// }
+const showLightbox = (name, img) => {
+    lightBox.querySelector("img").src = img;
+    lightBox.querySelector("span").innerText = name;
+    lightBox.classList.add("show");
+};
+
 const generateHTML = (images) => {
     imagesWrapper.innerHTML += images.map(img =>
-        `<li class="card">
+        `<li class="card" onclick= "showLightbox('${img.photographer}', '${img.src.large2x}')">
                 <img src="${img.src.large2x}" alt="img">
                 <div class="details">
                     <div class="photographer">
                         <i class="uil uil-camera"></i>
                         <span>${img.photographer}</span>
                     </div>
-                    <button><i class="uil uil-import"></i></button>
+                    <button onclick="downloadImg('${img.src.large2x}')">
+                    <i class="uil uil-import"></i>
+                    </button>
                 </div>
             </li>`
     ).join("");
@@ -33,16 +56,18 @@ const getImages = (apiURL) => {
             generateHTML(data.photos);
             loadMoreBtn.innerText = "Load More";
             loadMoreBtn.classList.remove("disabled");
-        })
+        }).catch(() => alert("Failed to load images!"));
 }
 
 const loadMoreImages = () => {
     currentPage++;
-    let apiURL = `https://api.pexels.com/v1/curated?page=${currentPage}&per_page=${perPage}`
+    let apiURL = `https://api.pexels.com/v1/curated?page=${currentPage}&per_page=${perPage}`;
+    apiURL = searchTerm ? `https://api.pexels.com/v1/search?query=${searchTerm}&page=${currentPage}&per_page=${perPage}` : apiURL;
     getImages(apiURL);
 }
 
 const loadSearchImages = (e) => {
+    if (e.target.value === "") return searchTerm = null;
     if (e.key === "Enter") {
         currentPage = 1;
         searchTerm = e.target.value;
@@ -56,4 +81,5 @@ const loadSearchImages = (e) => {
 getImages(`https://api.pexels.com/v1/curated?page=${currentPage}&per_page=${perPage}`);
 loadMoreBtn.addEventListener("click", loadMoreImages);
 searchInput.addEventListener("keyup", loadSearchImages);
+
 
